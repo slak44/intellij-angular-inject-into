@@ -1,4 +1,4 @@
-package com.github.slak44.intellijangularinjectinto
+package slak
 
 import com.intellij.DynamicBundle
 import org.jetbrains.annotations.NonNls

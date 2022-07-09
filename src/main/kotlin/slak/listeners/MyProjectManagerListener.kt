@@ -1,9 +1,9 @@
-package com.github.slak44.intellijangularinjectinto.listeners
+package slak.listeners
 
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManagerListener
-import com.github.slak44.intellijangularinjectinto.services.MyProjectService
+import slak.services.MyProjectService
 
 internal class MyProjectManagerListener : ProjectManagerListener {
 

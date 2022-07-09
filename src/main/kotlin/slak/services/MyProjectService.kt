@@ -1,7 +1,7 @@
-package com.github.slak44.intellijangularinjectinto.services
+package slak.services
 
 import com.intellij.openapi.project.Project
-import com.github.slak44.intellijangularinjectinto.MyBundle
+import slak.MyBundle
 
 class MyProjectService(project: Project) {
 

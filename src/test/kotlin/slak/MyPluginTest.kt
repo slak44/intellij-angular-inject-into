@@ -1,4 +1,4 @@
-package com.github.slak44.intellijangularinjectinto
+package slak
 
 import com.intellij.ide.highlighter.XmlFileType
 import com.intellij.psi.xml.XmlFile

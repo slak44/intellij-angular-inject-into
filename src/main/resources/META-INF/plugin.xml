@@ -1,18 +1,18 @@
 <!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
 <idea-plugin>
-    <id>com.github.slak44.intellijangularinjectinto</id>
-    <name>intellij-angular-inject-into</name>
+    <id>slak.angular-inject-into</id>
+    <name>Angular Inject Into Action</name>
     <vendor>slak44</vendor>
 
     <depends>com.intellij.modules.platform</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <applicationService serviceImplementation="com.github.slak44.intellijangularinjectinto.services.MyApplicationService"/>
-        <projectService serviceImplementation="com.github.slak44.intellijangularinjectinto.services.MyProjectService"/>
+        <applicationService serviceImplementation="slak.services.MyApplicationService"/>
+        <projectService serviceImplementation="slak.services.MyProjectService"/>
     </extensions>
 
     <applicationListeners>
-        <listener class="com.github.slak44.intellijangularinjectinto.listeners.MyProjectManagerListener"
+        <listener class="slak.listeners.MyProjectManagerListener"
                   topic="com.intellij.openapi.project.ProjectManagerListener"/>
     </applicationListeners>
 </idea-plugin>
