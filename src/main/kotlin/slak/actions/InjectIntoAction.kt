@@ -1,6 +1,7 @@
 package slak.actions
 
 import com.intellij.codeInsight.hint.HintManager
+import com.intellij.ide.projectView.impl.nodes.PsiFileNode
 import com.intellij.ide.util.AbstractTreeClassChooserDialog
 import com.intellij.lang.javascript.TypeScriptFileType
 import com.intellij.lang.javascript.psi.JSCallExpression
@@ -29,6 +30,55 @@ import icons.JavaScriptPsiIcons
 import javax.swing.tree.DefaultMutableTreeNode
 
 data class InjectionTarget(val target: TypeScriptClass, val matchedDecoratorName: String)
+
+fun findInjectionTargets(psiFile: PsiFile): List<InjectionTarget> {
+  val injectionTargets = mutableListOf<InjectionTarget>()
+
+  psiFile.accept(object : JSElementVisitor() {
+    var enclosingClass: TypeScriptClass? = null
+
+    override fun visitFile(file: PsiFile) {
+      file.acceptChildren(this)
+    }
+
+    override fun visitTypeScriptClass(typeScriptClass: TypeScriptClass) {
+      enclosingClass = typeScriptClass
+      typeScriptClass.attributeList?.accept(this)
+      enclosingClass = null
+    }
+
+    override fun visitJSAttributeList(attributeList: JSAttributeList) {
+      attributeList.acceptChildren(this)
+    }
+
+    override fun visitES6Decorator(decorator: ES6Decorator) {
+      val decoratorName = decorator.decoratorName ?: return
+
+      if (decoratorName !in listOf("Component", "Directive", "Injectable", "NgModule")) {
+        return
+      }
+
+      val decoratorCall = decorator.expression
+
+      if (decoratorCall !is JSCallExpression) {
+        return
+      }
+
+      val methodReference = decoratorCall.methodExpression?.reference ?: return
+      val resolvedReference = methodReference.resolve() ?: return
+      val resolvedFile = resolvedReference.parentOfType<JSFile>() ?: return
+      val resolvedDirectory = resolvedFile.containingDirectory.virtualFile
+
+      if ("node_modules/@angular/core" !in resolvedDirectory.path) {
+        return
+      }
+
+      injectionTargets += InjectionTarget(enclosingClass!!, decoratorName)
+    }
+  })
+
+  return injectionTargets
+}
 
 class InjectIntoAction : AnAction() {
   private val hintManager = HintManager.getInstance()
@@ -61,11 +111,21 @@ class InjectIntoAction : AnAction() {
   private fun handleConstructorParameterInjection(editor: Editor, constructor: TypeScriptFunction) {
     val project = editor.project!!
 
-    // TODO: keep only the name chooser from this thing
     val dialog = object :
       AbstractTreeClassChooserDialog<TypeScriptClass>("Select Class To Inject", project, TypeScriptClass::class.java) {
-      override fun getSelectedFromTreeUserObject(node: DefaultMutableTreeNode?): TypeScriptClass {
-        TODO("not implemented")
+      override fun getSelectedFromTreeUserObject(node: DefaultMutableTreeNode): TypeScriptClass? {
+        val treeUserObject = node.userObject
+        if (treeUserObject !is PsiFileNode) {
+          return null
+        }
+
+        val psiFile = treeUserObject.element!!.value
+
+        if (psiFile.fileType !is TypeScriptFileType) {
+          return null
+        }
+
+        return findInjectionTargets(psiFile).firstOrNull()?.target
       }
 
       override fun getClassesByName(
@@ -140,55 +200,6 @@ class InjectIntoAction : AnAction() {
 
       override fun getFinalRunnable() = Runnable { handleConstructorInjection(editor, chosen!!) }
     }).showInBestPositionFor(editor)
-  }
-
-  private fun findInjectionTargets(psiFile: PsiFile): List<InjectionTarget> {
-    val injectionTargets = mutableListOf<InjectionTarget>()
-
-    psiFile.accept(object : JSElementVisitor() {
-      var enclosingClass: TypeScriptClass? = null
-
-      override fun visitFile(file: PsiFile) {
-        file.acceptChildren(this)
-      }
-
-      override fun visitTypeScriptClass(typeScriptClass: TypeScriptClass) {
-        enclosingClass = typeScriptClass
-        typeScriptClass.attributeList?.accept(this)
-        enclosingClass = null
-      }
-
-      override fun visitJSAttributeList(attributeList: JSAttributeList) {
-        attributeList.acceptChildren(this)
-      }
-
-      override fun visitES6Decorator(decorator: ES6Decorator) {
-        val decoratorName = decorator.decoratorName ?: return
-
-        if (decoratorName !in listOf("Component", "Directive", "Injectable", "NgModule")) {
-          return
-        }
-
-        val decoratorCall = decorator.expression
-
-        if (decoratorCall !is JSCallExpression) {
-          return
-        }
-
-        val methodReference = decoratorCall.methodExpression?.reference ?: return
-        val resolvedReference = methodReference.resolve() ?: return
-        val resolvedFile = resolvedReference.parentOfType<JSFile>() ?: return
-        val resolvedDirectory = resolvedFile.containingDirectory.virtualFile
-
-        if ("node_modules/@angular/core" !in resolvedDirectory.path) {
-          return
-        }
-
-        injectionTargets += InjectionTarget(enclosingClass!!, decoratorName)
-      }
-    })
-
-    return injectionTargets
   }
 
   override fun actionPerformed(event: AnActionEvent) {
