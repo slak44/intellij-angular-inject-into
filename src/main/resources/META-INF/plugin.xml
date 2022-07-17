@@ -5,6 +5,7 @@
     <vendor>slak44</vendor>
 
     <depends>com.intellij.modules.platform</depends>
+    <depends>JavaScript</depends>
 
     <extensions defaultExtensionNs="com.intellij">
         <applicationService serviceImplementation="slak.services.MyApplicationService"/>
@@ -15,4 +16,12 @@
         <listener class="slak.listeners.MyProjectManagerListener"
                   topic="com.intellij.openapi.project.ProjectManagerListener"/>
     </applicationListeners>
+    <actions>
+        <action id="slak.actions.InjectIntoAction"
+                class="slak.actions.InjectIntoAction"
+                text="Angular Inject Into"
+                description="Inject something into the active DI element">
+            <add-to-group group-id="ToolsMenu" anchor="first"/>
+        </action>
+    </actions>
 </idea-plugin>
