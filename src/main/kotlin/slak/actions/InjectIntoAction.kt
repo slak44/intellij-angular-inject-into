@@ -3,6 +3,7 @@ package slak.actions
 import com.intellij.codeInsight.hint.HintManager
 import com.intellij.ide.projectView.impl.nodes.PsiFileNode
 import com.intellij.ide.util.AbstractTreeClassChooserDialog
+import com.intellij.lang.ecmascript6.actions.ES6AddImportExecutor
 import com.intellij.lang.javascript.TypeScriptFileType
 import com.intellij.lang.javascript.psi.JSCallExpression
 import com.intellij.lang.javascript.psi.JSElementVisitor
@@ -13,7 +14,7 @@ import com.intellij.lang.javascript.psi.ecma6.TypeScriptFunction
 import com.intellij.lang.javascript.psi.ecmal4.JSAttributeList
 import com.intellij.lang.javascript.psi.impl.JSPsiElementFactory
 import com.intellij.lang.javascript.psi.stubs.JSClassIndex
-import com.intellij.lang.typescript.psi.TypeScriptAutoImportUtil
+import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
@@ -25,9 +26,15 @@ import com.intellij.openapi.ui.popup.util.BaseListPopupStep
 import com.intellij.psi.PsiFile
 import com.intellij.psi.codeStyle.CodeStyleManager
 import com.intellij.psi.search.GlobalSearchScope
+import com.intellij.psi.stubs.StubIndex
 import com.intellij.psi.util.parentOfType
 import icons.JavaScriptPsiIcons
+import org.angular2.entities.metadata.psi.Angular2MetadataClassBase
+import org.angular2.index.Angular2MetadataClassNameIndex
+import java.util.*
 import javax.swing.tree.DefaultMutableTreeNode
+
+const val GROUP_ID = "inject-into"
 
 data class InjectionTarget(val target: TypeScriptClass, val matchedDecoratorName: String)
 
@@ -90,19 +97,30 @@ class InjectIntoAction : AnAction() {
     selected: TypeScriptClass
   ) {
     val selectedName = selected.name!!
-    val lowerCamelCased = selectedName.decapitalize()
+    val lowerCamelCased = selectedName.replaceFirstChar { it.lowercase(Locale.getDefault()) }
 
     val fakeParam = "private readonly $lowerCamelCased: $selectedName"
-    val fakeClass = JSPsiElementFactory.createJSClass("class X { constructor($fakeParam) {} }", constructor)
+    val fakeClass = JSPsiElementFactory.createJSClass("class X { constructor($fakeParam,) {} }", constructor)
     val parameterPsi = fakeClass.constructor!!.parameters.single()
+    val commaElement = parameterPsi.nextSibling
 
     val paramList = constructor.parameterList!!
+    val isAddingFirstParam = paramList.parameters.isEmpty()
 
-    WriteCommandAction.runWriteCommandAction(editor.project, "Add Constructor Parameter", "inject-into", {
+    val importExecutor = ES6AddImportExecutor(editor, constructor.containingFile)
+    val isInjectingFromCurrentFile = selected.containingFile == constructor.containingFile
+
+    WriteCommandAction.runWriteCommandAction(editor.project, "Add Constructor Parameter", GROUP_ID, {
       // Last child is the closing paren
-      paramList.addBefore(parameterPsi, paramList.lastChild)
+      val addedParam = paramList.addBefore(parameterPsi, paramList.lastChild)
 
-      TypeScriptAutoImportUtil.addImportStatement(editor, selectedName, selected, constructor.containingFile)
+      if (!isAddingFirstParam) {
+        paramList.addBefore(commaElement, addedParam)
+      }
+
+      if (!isInjectingFromCurrentFile) {
+        importExecutor.execute(selectedName, selected)
+      }
 
       hintManager.showInformationHint(editor, "Injected $selectedName as $lowerCamelCased")
     }, constructor.containingFile)
@@ -134,11 +152,18 @@ class InjectIntoAction : AnAction() {
         pattern: String,
         searchScope: GlobalSearchScope
       ): MutableList<TypeScriptClass> {
-        val a = JSClassIndex.getElements(name, project, GlobalSearchScope.everythingScope(project))
-        return a
-          .filterIsInstance<TypeScriptClass>()
-//          .filter { tsClass -> tsClass.attributeList?.decorators?.any { it.decoratorName == "Injectable" } == true }
-          .toMutableList()
+        val elements = StubIndex.getElements(
+          Angular2MetadataClassNameIndex.KEY,
+          name,
+          project,
+          GlobalSearchScope.everythingScope(project),
+          Angular2MetadataClassBase::class.java
+        )
+
+        val jsClasses = JSClassIndex.getElements(name, project, GlobalSearchScope.projectScope(project))
+        val projectTsClasses = jsClasses.filterIsInstance<TypeScriptClass>()
+
+        return elements.mapNotNullTo(projectTsClasses.toMutableList()) { it.typeScriptClass }
       }
     }
 
@@ -161,7 +186,9 @@ class InjectIntoAction : AnAction() {
       val fakeClass = JSPsiElementFactory.createJSClass("class X { constructor() {} }", inClass)
       val constructorPsi = fakeClass.constructor!!
 
-      WriteCommandAction.runWriteCommandAction(editor.project, "Add Constructor", "inject-into", {
+      var insertedFunction: TypeScriptFunction? = null
+
+      WriteCommandAction.runWriteCommandAction(editor.project, "Add Constructor", GROUP_ID, {
         val firstFunction = inClass.functions.firstOrNull()
         val inserted = if (firstFunction != null) {
           firstFunction.parent.addBefore(constructorPsi, firstFunction)
@@ -172,8 +199,10 @@ class InjectIntoAction : AnAction() {
         }
 
         check(inserted is TypeScriptFunction)
-        handleConstructorParameterInjection(editor, inserted)
+        insertedFunction = inserted
       }, inClass.containingFile)
+
+      handleConstructorParameterInjection(editor, requireNotNull(insertedFunction))
     } else {
       val constructor = inClass.constructor
       check(constructor is TypeScriptFunction)
@@ -218,6 +247,10 @@ class InjectIntoAction : AnAction() {
     } else {
       selectInjectionTarget(editor, injectionTargets)
     }
+  }
+
+  override fun getActionUpdateThread(): ActionUpdateThread {
+    return ActionUpdateThread.BGT
   }
 
   override fun update(event: AnActionEvent) {
