@@ -4,8 +4,11 @@ import com.intellij.codeInsight.hint.HintManager
 import com.intellij.ide.projectView.impl.nodes.PsiFileNode
 import com.intellij.ide.util.AbstractTreeClassChooserDialog
 import com.intellij.lang.ecmascript6.actions.ES6AddImportExecutor
+import com.intellij.lang.ecmascript6.actions.JSImportDescriptorBuilder
 import com.intellij.lang.javascript.TypeScriptFileType
+import com.intellij.lang.javascript.modules.JSImportPlaceInfo.ImportContext
 import com.intellij.lang.javascript.psi.JSCallExpression
+import com.intellij.lang.javascript.psi.JSElement
 import com.intellij.lang.javascript.psi.JSElementVisitor
 import com.intellij.lang.javascript.psi.JSFile
 import com.intellij.lang.javascript.psi.ecma6.ES6Decorator
@@ -107,7 +110,16 @@ class InjectIntoAction : AnAction() {
     val paramList = constructor.parameterList!!
     val isAddingFirstParam = paramList.parameters.isEmpty()
 
-    val importExecutor = ES6AddImportExecutor(editor, constructor.containingFile)
+    val importExecutor = object : ES6AddImportExecutor(constructor.containingFile) {
+      fun executeNotDeprecated(importedName: String, elementToImport: JSElement) {
+        val descriptor =
+          JSImportDescriptorBuilder(place).createDescriptor(importedName, elementToImport, ImportContext.SIMPLE)
+        if (descriptor != null) {
+          this.createImportOrUpdateExisting(descriptor)
+        }
+      }
+    }
+
     val isInjectingFromCurrentFile = selected.containingFile == constructor.containingFile
 
     WriteCommandAction.runWriteCommandAction(editor.project, "Add Constructor Parameter", GROUP_ID, {
@@ -119,7 +131,7 @@ class InjectIntoAction : AnAction() {
       }
 
       if (!isInjectingFromCurrentFile) {
-        importExecutor.execute(selectedName, selected)
+        importExecutor.executeNotDeprecated(selectedName, selected)
       }
 
       hintManager.showInformationHint(editor, "Injected $selectedName as $lowerCamelCased")
