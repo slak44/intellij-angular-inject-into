@@ -1,6 +1,6 @@
 <!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
 <idea-plugin>
-    <id>slak.angular-inject-into</id>
+    <id>slak44.angularinjectintoaction</id>
     <name>Angular Inject Into Action</name>
     <vendor url="https://github.com/slak44">slak44</vendor>
 
