@@ -2,7 +2,7 @@
 <idea-plugin>
     <id>slak.angular-inject-into</id>
     <name>Angular Inject Into Action</name>
-    <vendor>slak44</vendor>
+    <vendor url="https://github.com/slak44">slak44</vendor>
 
     <depends>com.intellij.modules.platform</depends>
     <depends>JavaScript</depends>

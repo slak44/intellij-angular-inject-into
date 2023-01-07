@@ -15,10 +15,8 @@
 - [ ] Click the <kbd>Watch</kbd> button on the top of the [IntelliJ Platform Plugin Template][template] to be notified about releases containing new features and fixes.
 
 <!-- Plugin description -->
-This plugin adds a single action to the `Tools` menu, `Angular Inject Into`. This action makes it easier to inject
-services or other classes into your Angular components, directives, and services. It lets you search and select what you
-want to inject, then it automatically adds a private readonly field to the constructor, along with the appropriate
-import statement.
+The `Angular Inject Into` action makes it easier to inject services or other classes into your Angular components/directives/services.
+It lets you search and select what you want to inject, then it automatically adds a private readonly field to the constructor, along with the appropriate import statement.
 
 ![Before](./readme-resources/before.png)
 ![Search](./readme-resources/search_dialog.png)
@@ -28,6 +26,8 @@ The plugin correctly handles files with multiple injection targets (eg, a Compon
 asking which should be used. It also deals with classes without a constructor to inject into by creating one.
 
 To make everything even easier, add a key binding for the action (I use Ctrl-Shift-2).
+
+GitHub: https://github.com/slak44/intellij-angular-inject-into
 <!-- Plugin description end -->
 
 ## Installation
