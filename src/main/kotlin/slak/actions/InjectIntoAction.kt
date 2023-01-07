@@ -34,6 +34,7 @@ import com.intellij.psi.util.parentOfType
 import icons.JavaScriptPsiIcons
 import org.angular2.entities.metadata.psi.Angular2MetadataClassBase
 import org.angular2.index.Angular2MetadataClassNameIndex
+import slak.TranslationsBundle.message
 import java.util.*
 import javax.swing.tree.DefaultMutableTreeNode
 
@@ -122,7 +123,7 @@ class InjectIntoAction : AnAction() {
 
     val isInjectingFromCurrentFile = selected.containingFile == constructor.containingFile
 
-    WriteCommandAction.runWriteCommandAction(editor.project, "Add Constructor Parameter", GROUP_ID, {
+    WriteCommandAction.runWriteCommandAction(editor.project, message("add_constructor_parameter"), GROUP_ID, {
       // Last child is the closing paren
       val addedParam = paramList.addBefore(parameterPsi, paramList.lastChild)
 
@@ -134,15 +135,18 @@ class InjectIntoAction : AnAction() {
         importExecutor.executeNotDeprecated(selectedName, selected)
       }
 
-      hintManager.showInformationHint(editor, "Injected $selectedName as $lowerCamelCased")
+      hintManager.showInformationHint(editor, message("injected_as", selectedName, lowerCamelCased))
     }, constructor.containingFile)
   }
 
   private fun handleConstructorParameterInjection(editor: Editor, constructor: TypeScriptFunction) {
     val project = editor.project!!
 
-    val dialog = object :
-      AbstractTreeClassChooserDialog<TypeScriptClass>("Select Class To Inject", project, TypeScriptClass::class.java) {
+    val dialog = object : AbstractTreeClassChooserDialog<TypeScriptClass>(
+      message("select_class_to_inject"),
+      project,
+      TypeScriptClass::class.java
+    ) {
       override fun getSelectedFromTreeUserObject(node: DefaultMutableTreeNode): TypeScriptClass? {
         val treeUserObject = node.userObject
         if (treeUserObject !is PsiFileNode) {
@@ -190,7 +194,7 @@ class InjectIntoAction : AnAction() {
     val (inClass) = injectionTarget
 
     if (inClass.constructors.size > 1) {
-      hintManager.showErrorHint(editor, "TypeScript classes must not have more than one constructor.")
+      hintManager.showErrorHint(editor, message("typescript_single_constructor"))
       return
     }
 
@@ -200,7 +204,7 @@ class InjectIntoAction : AnAction() {
 
       var insertedFunction: TypeScriptFunction? = null
 
-      WriteCommandAction.runWriteCommandAction(editor.project, "Add Constructor", GROUP_ID, {
+      WriteCommandAction.runWriteCommandAction(editor.project, message("add_constructor"), GROUP_ID, {
         val firstFunction = inClass.functions.firstOrNull()
         val inserted = if (firstFunction != null) {
           firstFunction.parent.addBefore(constructorPsi, firstFunction)
@@ -226,11 +230,11 @@ class InjectIntoAction : AnAction() {
     val tsClassIcons = List(injectionTargets.size) { JavaScriptPsiIcons.Classes.TypeScriptClass }
 
     popupFactory.createListPopup(object :
-      BaseListPopupStep<InjectionTarget>("Select Class To Inject Into", injectionTargets, tsClassIcons) {
+      BaseListPopupStep<InjectionTarget>(message("select_class_to_inject_into"), injectionTargets, tsClassIcons) {
       var chosen: InjectionTarget? = null
 
       override fun getTextFor(value: InjectionTarget): String {
-        return value.target.name ?: "Unknown class name"
+        return value.target.name ?: message("unknown_class_name")
       }
 
       override fun onChosen(selectedValue: InjectionTarget, finalChoice: Boolean): PopupStep<*>? {
@@ -250,7 +254,7 @@ class InjectIntoAction : AnAction() {
     val injectionTargets = findInjectionTargets(psiFile)
 
     if (injectionTargets.isEmpty()) {
-      hintManager.showErrorHint(editor, "No injection targets found in this file.")
+      hintManager.showErrorHint(editor, message("no_injection_targets"))
       return
     }
 
