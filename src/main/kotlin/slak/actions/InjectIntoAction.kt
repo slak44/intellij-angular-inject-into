@@ -7,10 +7,7 @@ import com.intellij.lang.ecmascript6.actions.ES6AddImportExecutor
 import com.intellij.lang.ecmascript6.actions.JSImportDescriptorBuilder
 import com.intellij.lang.javascript.TypeScriptFileType
 import com.intellij.lang.javascript.modules.JSImportPlaceInfo.ImportContext
-import com.intellij.lang.javascript.psi.JSCallExpression
-import com.intellij.lang.javascript.psi.JSElement
-import com.intellij.lang.javascript.psi.JSElementVisitor
-import com.intellij.lang.javascript.psi.JSFile
+import com.intellij.lang.javascript.psi.*
 import com.intellij.lang.javascript.psi.ecma6.ES6Decorator
 import com.intellij.lang.javascript.psi.ecma6.TypeScriptClass
 import com.intellij.lang.javascript.psi.ecma6.TypeScriptFunction
@@ -27,6 +24,7 @@ import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.ui.popup.PopupStep
 import com.intellij.openapi.ui.popup.util.BaseListPopupStep
 import com.intellij.psi.PsiFile
+import com.intellij.psi.PsiWhiteSpace
 import com.intellij.psi.codeStyle.CodeStyleManager
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.stubs.StubIndex
@@ -95,6 +93,21 @@ class InjectIntoAction : AnAction() {
   private val hintManager = HintManager.getInstance()
   private val popupFactory = JBPopupFactory.getInstance()
 
+  private fun hasTrailingComma(paramList: JSParameterList): Boolean {
+    return try {
+      var trailingComma = paramList.lastChild.prevSibling
+      while (trailingComma != null && trailingComma is PsiWhiteSpace) {
+        trailingComma = trailingComma.prevSibling
+      }
+
+      trailingComma != null && trailingComma.text == ","
+    } catch (e: Exception) {
+      e.printStackTrace()
+
+      false
+    }
+  }
+
   private fun injectSelectedIntoConstructor(
     editor: Editor,
     constructor: TypeScriptFunction,
@@ -110,6 +123,9 @@ class InjectIntoAction : AnAction() {
 
     val paramList = constructor.parameterList!!
     val isAddingFirstParam = paramList.parameters.isEmpty()
+
+    val hasTrailingComma = hasTrailingComma(paramList)
+    val maybeTrailingWhitespace = paramList.lastChild.prevSibling.copy()
 
     val importExecutor = object : ES6AddImportExecutor(constructor.containingFile) {
       fun executeNotDeprecated(importedName: String, elementToImport: JSElement) {
@@ -127,8 +143,16 @@ class InjectIntoAction : AnAction() {
       // Last child is the closing paren
       val addedParam = paramList.addBefore(parameterPsi, paramList.lastChild)
 
-      if (!isAddingFirstParam) {
+      if (!isAddingFirstParam && !hasTrailingComma) {
         paramList.addBefore(commaElement, addedParam)
+      }
+
+      if (hasTrailingComma) {
+        paramList.addAfter(commaElement, addedParam)
+      }
+
+      if (!isAddingFirstParam && maybeTrailingWhitespace is PsiWhiteSpace) {
+        paramList.addBefore(maybeTrailingWhitespace, paramList.lastChild)
       }
 
       if (!isInjectingFromCurrentFile) {

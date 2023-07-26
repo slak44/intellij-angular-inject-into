@@ -4,6 +4,10 @@
 
 ## [Unreleased]
 
+## [1.1.0]
+- Rebuild plugin for IU 2023.2
+- Support for constructors with trailing commas
+
 ## [1.0.1]
 - Rebuild plugin for IU 2023.1
 
