@@ -4,6 +4,9 @@
 
 ## [Unreleased]
 
+## [1.1.2]
+- Rebuild plugin for IU 2024.1
+
 ## [1.1.1]
 - Rebuild plugin for IU 2023.3
 
