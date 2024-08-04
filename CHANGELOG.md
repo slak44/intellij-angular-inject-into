@@ -3,6 +3,8 @@
 # intellij-angular-inject-into Changelog
 
 ## [Unreleased]
+
+## [1.2.0]
 - Update build code from IntelliJ Platform Plugin Template
 - Fix searching for Angular injectable classes outside project
 - Replace deprecated stub index key
