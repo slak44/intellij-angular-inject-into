@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 - Update build code from IntelliJ Platform Plugin Template
+- Fix searching for Angular injectable classes outside project
+- Replace deprecated stub index key
 
 ## [1.1.2]
 - Rebuild plugin for IU 2024.1

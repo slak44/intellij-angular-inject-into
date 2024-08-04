@@ -30,8 +30,7 @@ import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.stubs.StubIndex
 import com.intellij.psi.util.parentOfType
 import icons.JavaScriptPsiIcons
-import org.angular2.entities.metadata.psi.Angular2MetadataClassBase
-import org.angular2.index.Angular2MetadataClassNameIndex
+import org.angular2.index.Angular2MetadataClassNameIndexKey
 import slak.TranslationsBundle.message
 import java.util.*
 import javax.swing.tree.DefaultMutableTreeNode
@@ -192,18 +191,17 @@ class InjectIntoAction : AnAction() {
         pattern: String,
         searchScope: GlobalSearchScope
       ): MutableList<TypeScriptClass> {
-        val elements = StubIndex.getElements(
-          Angular2MetadataClassNameIndex.KEY,
-          name,
-          project,
-          GlobalSearchScope.everythingScope(project),
-          Angular2MetadataClassBase::class.java
-        )
-
         val jsClasses = JSClassIndex.getElements(name, project, GlobalSearchScope.projectScope(project))
         val projectTsClasses = jsClasses.filterIsInstance<TypeScriptClass>()
 
-        return elements.mapNotNullTo(projectTsClasses.toMutableList()) { it.typeScriptClass }
+        val hasNoAngularClass = StubIndex.getInstance().processAllKeys(Angular2MetadataClassNameIndexKey, project) { it != name }
+        if (hasNoAngularClass) {
+          return projectTsClasses.toMutableList()
+        }
+
+        val allClasses = JSClassIndex.getElements(name, project, GlobalSearchScope.everythingScope(project))
+        val angularClasses = allClasses.filterIsInstance<TypeScriptClass>().filter { it.isExported }
+        return (projectTsClasses.toSet() + angularClasses).toMutableList()
       }
     }
 
