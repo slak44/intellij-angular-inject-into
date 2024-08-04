@@ -3,6 +3,7 @@
 # intellij-angular-inject-into Changelog
 
 ## [Unreleased]
+- Update build code from IntelliJ Platform Plugin Template
 
 ## [1.1.2]
 - Rebuild plugin for IU 2024.1
