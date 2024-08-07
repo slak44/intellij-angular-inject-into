@@ -4,6 +4,9 @@
 
 ## Unreleased
 
+- Build latest plugin changes for older IU versions (from 2022.2 to 2024.1)
+- Work around limitations in older IU's Angular class name index
+
 ## 1.2.0
 
 - Update build code from IntelliJ Platform Plugin Template

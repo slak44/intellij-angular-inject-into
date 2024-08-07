@@ -30,7 +30,7 @@ import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.stubs.StubIndex
 import com.intellij.psi.util.parentOfType
 import icons.JavaScriptPsiIcons
-import org.angular2.index.Angular2MetadataClassNameIndexKey
+import org.angular2.index.Angular2MetadataClassNameIndex
 import slak.TranslationsBundle.message
 import java.util.*
 import javax.swing.tree.DefaultMutableTreeNode
@@ -165,6 +165,8 @@ class InjectIntoAction : AnAction() {
   private fun handleConstructorParameterInjection(editor: Editor, constructor: TypeScriptFunction) {
     val project = editor.project!!
 
+    val isIndexUseless = StubIndex.getInstance().getAllKeys(Angular2MetadataClassNameIndex.KEY, project).isEmpty()
+
     val dialog = object : AbstractTreeClassChooserDialog<TypeScriptClass>(
       message("select_class_to_inject"),
       project,
@@ -194,8 +196,8 @@ class InjectIntoAction : AnAction() {
         val jsClasses = JSClassIndex.getElements(name, project, GlobalSearchScope.projectScope(project))
         val projectTsClasses = jsClasses.filterIsInstance<TypeScriptClass>()
 
-        val hasNoAngularClass = StubIndex.getInstance().processAllKeys(Angular2MetadataClassNameIndexKey, project) { it != name }
-        if (hasNoAngularClass) {
+        val hasNoAngularClass = StubIndex.getInstance().processAllKeys(Angular2MetadataClassNameIndex.KEY, project) { it != name }
+        if (hasNoAngularClass && !isIndexUseless) {
           return projectTsClasses.toMutableList()
         }
 
