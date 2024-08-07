@@ -126,15 +126,8 @@ class InjectIntoAction : AnAction() {
     val hasTrailingComma = hasTrailingComma(paramList)
     val maybeTrailingWhitespace = paramList.lastChild.prevSibling.copy()
 
-    val importExecutor = object : ES6AddImportExecutor(constructor.containingFile) {
-      fun executeNotDeprecated(importedName: String, elementToImport: JSElement) {
-        val descriptor =
-          JSImportDescriptorBuilder(place).createDescriptor(importedName, elementToImport, ImportContext.SIMPLE)
-        if (descriptor != null) {
-          this.createImportOrUpdateExisting(descriptor)
-        }
-      }
-    }
+    @Suppress("DEPRECATION")
+    val importExecutor = ES6AddImportExecutor(editor, constructor.containingFile)
 
     val isInjectingFromCurrentFile = selected.containingFile == constructor.containingFile
 
@@ -155,7 +148,8 @@ class InjectIntoAction : AnAction() {
       }
 
       if (!isInjectingFromCurrentFile) {
-        importExecutor.executeNotDeprecated(selectedName, selected)
+        @Suppress("DEPRECATION")
+        importExecutor.execute(selectedName, selected)
       }
 
       hintManager.showInformationHint(editor, message("injected_as", selectedName, lowerCamelCased))
