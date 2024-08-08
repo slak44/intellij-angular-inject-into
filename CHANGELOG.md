@@ -4,7 +4,7 @@
 
 ## Unreleased
 
-## 1.2.0
+## 1.2.1
 
 - Update build code from IntelliJ Platform Plugin Template
 - Fix searching for Angular injectable classes outside project
