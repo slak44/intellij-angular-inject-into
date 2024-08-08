@@ -4,14 +4,13 @@
 
 ## Unreleased
 
-- Build latest plugin changes for older IU versions (from 2022.2 to 2023.2)
-- Work around limitations in older IU's Angular class name index
-
 ## 1.2.0
 
 - Update build code from IntelliJ Platform Plugin Template
 - Fix searching for Angular injectable classes outside project
 - Replace deprecated stub index key
+- Build latest plugin changes for older IU versions (from 2022.2 to 2023.2)
+- Work around limitations in older IU's Angular class name index
 
 ## 1.1.2
 
