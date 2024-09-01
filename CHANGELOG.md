@@ -4,8 +4,10 @@
 
 ## Unreleased
 
+## 1.2.1 - 2024-09-01
+
 - Fix bug where new constructor is added in the wrong position because the functions list was unsorted
-- Remove images in plugin description 
+- Remove images in plugin description
 
 ## 1.2.0
 
