@@ -227,7 +227,7 @@ class InjectIntoAction : AnAction() {
       var insertedFunction: TypeScriptFunction? = null
 
       WriteCommandAction.runWriteCommandAction(editor.project, message("add_constructor"), GROUP_ID, {
-        val firstFunction = inClass.functions.firstOrNull()
+        val firstFunction = inClass.functions.minByOrNull { it.textOffset }
         val inserted = if (firstFunction != null) {
           firstFunction.parent.addBefore(constructorPsi, firstFunction)
         } else {

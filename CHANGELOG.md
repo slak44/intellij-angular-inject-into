@@ -4,6 +4,9 @@
 
 ## Unreleased
 
+- Fix bug where new constructor is added in the wrong position because the functions list was unsorted
+- Remove images in plugin description 
+
 ## 1.2.0
 
 - Update build code from IntelliJ Platform Plugin Template
